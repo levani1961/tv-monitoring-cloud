@@ -1,0 +1,4 @@
+[openai]
+api_key = paste_your_openai_api_key_here
+transcription_model = gpt-4o-transcribe
+analysis_model = gpt-4o-mini

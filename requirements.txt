@@ -1,0 +1,6 @@
+pandas
+openpyxl
+openai
+streamlit
+Pillow
+playwright
