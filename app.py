@@ -18,7 +18,7 @@ def check_password():
 
     def password_entered():
         """ამოწმებს პაროლის სისწორეს."""
-        if st.session_state["username"] == "admin" and st.session_state["password"] == "tvmonitor2026":
+        if st.session_state["username"] == "" and st.session_state["password"] == "":
             st.session_state["password_correct"] = True
             del st.session_state["password"]  # პაროლი აღარ გვჭირდება სესიაში
             del st.session_state["username"]
