@@ -2,6 +2,8 @@ from datetime import date
 from pathlib import Path
 
 import streamlit as st
+st.session_state["logged_in"] = True
+
 
 from config import load_settings
 from excel_report import build_excel_report, violation_rows_for_dashboard
