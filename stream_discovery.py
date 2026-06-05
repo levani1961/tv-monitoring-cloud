@@ -20,7 +20,7 @@ def _validate_public_url(url):
         raise ValueError("შეიყვანეთ სწორი Myvideo.ge არქივის ბმული.")
 
 
-def discover_hls_stream_url(page_url, wait_seconds=45, headless=True, progress=None):
+def discover_hls_stream_url(page_url, wait_seconds=120, headless=True, progress=None):
     """
     Opens the page in a normal browser context and captures HLS URLs requested
     by the video player. This does not bypass access controls; the page must be
@@ -57,7 +57,7 @@ def discover_hls_stream_url(page_url, wait_seconds=45, headless=True, progress=N
         page.on("response", lambda response: capture_url(response.url))
 
         try:
-            page.goto(page_url, wait_until="domcontentloaded", timeout=60000)
+            page.goto(page_url, wait_until="domcontentloaded", timeout=180000)
             final_page_url = page.url
             try:
                 page.wait_for_load_state("networkidle", timeout=15000)
