@@ -1,8 +1,0 @@
-pandas
-openpyxl
-streamlit
-Pillow
-playwright
-google-generativeai
-configparser
-python-dotenv
