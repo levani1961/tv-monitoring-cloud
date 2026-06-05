@@ -2,6 +2,10 @@ from datetime import date
 from pathlib import Path
 
 import streamlit as st
+import os
+if not os.path.exists("/opt/render/.cache/ms-playwright"):
+    os.system("playwright install chromium")
+
 st.session_state["logged_in"] = True
 
 
