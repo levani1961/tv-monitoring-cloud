@@ -28,17 +28,27 @@ def load_settings():
             parser.read(CONFIG_FILE, encoding="utf-8")
         except ConfigParserError as exc:
             raise ValueError(
-                "config.ini არასწორად არის შევსებული. გამოიყენეთ ფორმა: "
-                "[openai] შემდეგ api_key = თქვენი_გასაღები"
+                "config.ini არასწორად არის შევსებული."
             ) from exc
 
+    # ვეძებთ გასაღებს რამდენიმე შესაძლო ადგილას მაქსიმალური თავსებადობისთვის
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_key:
+        # ჯერ ვეძებთ [gemini] სექციაში
+        gemini_key = parser.get("gemini", "api_key", fallback=None)
+    if not gemini_key:
+        # თუ იქ არ არის, ვეძებთ [google] სექციაში
+        gemini_key = parser.get("google", "api_key", fallback=None)
+    if not gemini_key:
+        # ბოლო იმედი - იქნებ ისევ [openai] სექციაში წერია
+        gemini_key = parser.get("openai", "api_key", fallback=None)
+
     return {
-        "openai_api_key": os.getenv("OPENAI_API_KEY")
-        or parser.get("openai", "api_key", fallback="").strip(),
+        "gemini_api_key": (gemini_key or "").strip(),
         "transcription_model": parser.get(
-            "openai", "transcription_model", fallback="gpt-4o-transcribe"
+            "whisper", "model", fallback=parser.get("openai", "transcription_model", fallback="medium")
         ).strip(),
         "analysis_model": parser.get(
-            "openai", "analysis_model", fallback="gpt-4o-mini"
+            "gemini", "analysis_model", fallback=parser.get("openai", "analysis_model", fallback="gemini-2.5-flash")
         ).strip(),
     }

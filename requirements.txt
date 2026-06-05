@@ -1,6 +1,8 @@
 pandas
 openpyxl
-openai
 streamlit
 Pillow
 playwright
+google-generativeai
+configparser
+python-dotenv

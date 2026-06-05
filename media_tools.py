@@ -21,7 +21,7 @@ def ensure_media_dirs():
             pass
 
 
-def run_ffmpeg(command, timeout_seconds=900):
+def run_ffmpeg(command, timeout_seconds=18000): # 5 საათიანი ლიმიტი
     try:
         subprocess.run(
             command,
@@ -99,20 +99,18 @@ def cut_video_range(input_video, start_seconds, end_seconds, output_path, input_
 
 
 def save_stream_duration(input_url, duration_seconds, output_path, input_headers=None):
+    duration_str = str(max(1, int(duration_seconds)))
     command = [
         "ffmpeg",
         "-y",
+        "-rw_timeout", "20000000", # 20 წამიანი ქსელური ტაიმაუტი (მიკროწამებში)
         *_ffmpeg_header_args(input_headers),
-        "-i",
-        str(input_url),
-        "-t",
-        str(max(1, int(duration_seconds))),
-        "-c",
-        "copy",
-        "-bsf:a",
-        "aac_adtstoasc",
-        "-movflags",
-        "+faststart",
+        "-t", duration_str,        # აჩერებს ჩაწერას მითითებული დროის შემდეგ
+        "-i", str(input_url),
+        "-t", duration_str,        # ორმაგი დაზღვევა
+        "-c", "copy",
+        "-bsf:a", "aac_adtstoasc",
+        "-movflags", "+faststart",
         str(output_path),
     ]
     run_ffmpeg(command)

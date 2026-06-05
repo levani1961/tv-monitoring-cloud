@@ -2,7 +2,6 @@ from datetime import date
 from pathlib import Path
 
 import streamlit as st
-from openai import OpenAI
 
 from config import load_settings
 from excel_report import build_excel_report, violation_rows_for_dashboard
@@ -14,6 +13,36 @@ from source_manager import CHANNELS, create_local_jobs, create_myvideo_jobs
 
 st.set_page_config(page_title="Enterprise AI ტელემონიტორინგი", layout="wide")
 
+def check_password():
+    """აბრუნებს True-ს, თუ მომხმარებელმა შეიყვანა სწორი პაროლი."""
+
+    def password_entered():
+        """ამოწმებს პაროლის სისწორეს."""
+        if st.session_state["username"] == "admin" and st.session_state["password"] == "tvmonitor2026":
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # პაროლი აღარ გვჭირდება სესიაში
+            del st.session_state["username"]
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # პირველი გაშვება, აჩვენებს ავტორიზაციის ფორმას
+        st.title("ავტორიზაცია")
+        st.text_input("მომხმარებელი", key="username")
+        st.text_input("პაროლი", type="password", key="password")
+        st.button("შესვლა", on_click=password_entered)
+        return False
+    elif not st.session_state["password_correct"]:
+        # არასწორი პაროლი, აჩვენებს ფორმას და შეცდომას
+        st.title("ავტორიზაცია")
+        st.text_input("მომხმარებელი", key="username")
+        st.text_input("პაროლი", type="password", key="password")
+        st.button("შესვლა", on_click=password_entered)
+        st.error("❌ მომხმარებლის სახელი ან პაროლი არასწორია")
+        return False
+    else:
+        # სწორი პაროლი
+        return True
 
 def stop_if_unlicensed():
     try:
@@ -34,11 +63,16 @@ def render_sidebar(settings):
     with st.sidebar:
         st.subheader("სისტემის პარამეტრები")
         transcription_model = st.text_input(
-            "ტრანსკრიპციის მოდელი",
-            value=settings["transcription_model"],
-            help="თუ ზუსტი timestamps გჭირდებათ, whisper-1 ხშირად უკეთ აბრუნებს სეგმენტებს. თუ ქართული ხარისხია პრიორიტეტი, სცადეთ gpt-4o-transcribe.",
+            "ტრანსკრიპციის მოდელი (Gemini Audio)",
+            value=settings["analysis_model"],
+            help="ტრანსკრიპციისთვისაც გამოყენებული იქნება Gemini, რათა სერვერი არ დაიტვირთოს.",
+            disabled=True
         )
-        analysis_model = st.text_input("AI ანალიზის მოდელი", value=settings["analysis_model"])
+        analysis_model = st.text_input(
+            "AI ანალიზის მოდელი (Gemini)", 
+            value=settings["analysis_model"],
+            help="Gemini მოდელი: gemini-2.5-flash ან gemini-2.5-pro",
+        )
         st.caption("API key ინახება მხოლოდ config.ini/.env-ში და არ იწერება კოდში.")
     return transcription_model, analysis_model
 
@@ -162,12 +196,18 @@ def render_results(violations, report_path):
 
 
 def main():
+    if not check_password():
+        st.stop()
+
     stop_if_unlicensed()
     ensure_media_dirs()
 
     settings = load_settings()
-    if not settings["openai_api_key"]:
-        st.error("OpenAI API key არ არის მითითებული. დაამატეთ config.ini ან .env ფაილში.")
+    # ვამოწმებთ, რომ გასაღები არსებობს და არ არის ცარიელი ან სატესტო ტექსტი
+    gemini_key = settings.get("gemini_api_key", "")
+    if not gemini_key or "აქ_ჩავსვამ" in gemini_key or "your_gemini" in gemini_key:
+        st.error("Gemini API key არ არის მითითებული. გთხოვთ, ჩაწეროთ თქვენი API გასაღები config.ini ფაილში [gemini] სექციის ქვეშ.")
+        st.info("ამჟამინდელი მნიშვნელობა config.ini-ში: " + (gemini_key if gemini_key else "ცარიელია"))
         st.stop()
 
     transcription_model, analysis_model = render_sidebar(settings)
@@ -190,8 +230,6 @@ def main():
     def progress(message):
         status.info(message)
 
-    client = OpenAI(api_key=settings["openai_api_key"])
-
     try:
         progress("სამუშაო ვიდეოების მომზადება...")
         jobs = materialize_jobs(options, progress)
@@ -201,7 +239,7 @@ def main():
             return
 
         violations, metadata = process_video_jobs(
-            client=client,
+            gemini_key=settings.get("gemini_api_key"),
             jobs=jobs,
             transcription_model=transcription_model,
             analysis_model=analysis_model,

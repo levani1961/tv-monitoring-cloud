@@ -7,7 +7,7 @@ from transcription import transcribe_video
 
 
 def process_video_jobs(
-    client,
+    gemini_key,
     jobs,
     transcription_model,
     analysis_model,
@@ -22,9 +22,9 @@ def process_video_jobs(
 
         try:
             segments = transcribe_video(
-                client=client,
                 video_path=job.video_path,
-                model_name=transcription_model,
+                model_name=analysis_model, # გამოიყენებს Gemini-ს ტრანსკრიპციისთვისაც
+                gemini_key=gemini_key,
                 language="ka",
                 progress=progress,
             )
@@ -33,7 +33,7 @@ def process_video_jobs(
                 progress(f"{job_index}/{len(jobs)} | ჟანრის და რეკლამის AI ანალიზი...")
 
             violations, metadata = analyze_hidden_ads(
-                client=client,
+                gemini_key=gemini_key,
                 segments=segments,
                 model_name=analysis_model,
                 channel=job.channel,
