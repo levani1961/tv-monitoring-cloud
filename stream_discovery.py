@@ -24,11 +24,9 @@ def _validate_public_url(url):
 def discover_hls_stream_url(page_url, wait_seconds=120, headless=True, progress=None):
     _validate_public_url(page_url)
     
-    # თუ ლინკი არის YouTube-ის, ვიყენებთ პირდაპირ ნაკადს ბრაუზერის გარეშე
     if "youtube.com" in page_url or "youtu.be" in page_url:
         if progress:
             progress("აღმოჩენილია YouTube ლინკი. ნაკადის ოპტიმიზაცია...")
-        # იუთუბის შემთხვევაში პირდაპირ ვაბრუნებთ თავის ლინკს, რადგან FFmpeg მას კითხულობს
         return page_url, {"User-Agent": DEFAULT_BROWSER_UA}
 
     captured_urls = []
@@ -102,7 +100,7 @@ def discover_hls_stream_url(page_url, wait_seconds=120, headless=True, progress=
         )
 
     captured_urls.sort(key=lambda url: ("/index" in url or "master" in url, len(url)), reverse=True)
-    return captured_urls[0], {"User-Agent": DEFAULT_BROWSER_UA, "Referer": page_url}
-
+    if progress:
         progress("ვიდეო ნაკადი მოიძებნა. FFmpeg ქმნის სამუშაო მონაკვეთს...")
     return captured_urls[0], {"User-Agent": DEFAULT_BROWSER_UA, "Referer": page_url}
+
