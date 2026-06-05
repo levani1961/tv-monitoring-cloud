@@ -36,7 +36,14 @@ def discover_hls_stream_url(page_url, wait_seconds=120, headless=True, progress=
         progress("ბრაუზერი ხსნის არქივის გვერდს და ეძებს ვიდეო ნაკადს...")
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=headless)
+        browser = playwright.chromium.launch(
+            headless=headless,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-setuid-sandbox"
+            ]
+        )
         context = browser.new_context(
             user_agent=DEFAULT_BROWSER_UA,
             locale="ka-GE",
